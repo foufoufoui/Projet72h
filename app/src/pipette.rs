@@ -8,6 +8,10 @@ use eframe::egui;
 static COULEUR_PIOCHES: Mutex<Option<[u8; 3]>> = Mutex::new(None);
 
 /// Renvoie la couleur prélevée à l'écran, s'il y en a une.
+///
+/// Utilisé uniquement sur macOS (pipette native) ; conservé sur les autres
+/// plateformes pour garder une API stable de module.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn couleur_piochee() -> Option<[u8; 3]> {
     let mut garde = COULEUR_PIOCHES.lock().unwrap_or_else(|e| e.into_inner());
     garde.take()
@@ -15,9 +19,10 @@ pub fn couleur_piochee() -> Option<[u8; 3]> {
 
 /// Ouvre la pipette pour choisir une couleur à l'écran.
 /// Sans effet sur les autres plateformes.
-pub fn ouvrir(ctx: &egui::Context) {
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub fn ouvrir(_ctx: &egui::Context) {
     #[cfg(target_os = "macos")]
-    mac::ouvrir(ctx);
+    mac::ouvrir(_ctx);
 }
 
 #[cfg(target_os = "macos")]

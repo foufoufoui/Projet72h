@@ -4,8 +4,13 @@ use eframe::egui;
 
 use crate::theme::Theme;
 
-/// Une action demandée par l'utilisateur via le menu natif macOS, mise en
-/// file pour être traitée par `HarpeApp` à l'image suivante.
+/// Une action demandée via le menu natif macOS ou les raccourcis clavier,
+/// mise en file pour être traitée par `HarpeApp` à l'image suivante.
+///
+/// Les variantes propres au menu natif (panneau, thème, quitter) ne sont
+/// construites que sur macOS : on désamorce l'avertissement de code mort sur
+/// les plateformes qui n'ont pas de menu natif.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActionMenu {
     Nouveau,
@@ -39,17 +44,58 @@ pub fn tirer_actions() -> Vec<ActionMenu> {
     std::mem::take(&mut *garde)
 }
 
+/// Enfile une action dans la file (utilisé par les raccourcis clavier).
+#[cfg(not(target_os = "macos"))]
+fn pousser_action(action: ActionMenu) {
+    let mut garde = ACTIONS.lock().unwrap_or_else(|e| e.into_inner());
+    garde.push(action);
+}
+
+/// Capture les raccourcis clavier communs (Ctrl/Cmd + N, O, S, Maj+S) et les
+/// enfile comme actions de menu. Le menu natif macOS gère déjà ses propres
+/// raccourcis, cette capture est donc réservée aux plateformes sans menu natif
+/// (Windows, Linux).
+pub fn capter_raccourcis(ctx: &egui::Context) {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = ctx;
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let action = ctx.input(|i| {
+            let cmd = i.modifiers.command;
+            if cmd && i.key_pressed(egui::Key::N) {
+                return Some(ActionMenu::Nouveau);
+            }
+            if cmd && i.key_pressed(egui::Key::O) {
+                return Some(ActionMenu::Ouvrir);
+            }
+            if cmd && i.key_pressed(egui::Key::S) {
+                return Some(if i.modifiers.shift {
+                    ActionMenu::EnregistrerSous
+                } else {
+                    ActionMenu::Enregistrer
+                });
+            }
+            None
+        });
+        if let Some(action) = action {
+            pousser_action(action);
+        }
+    }
+}
+
 /// Met à jour le libellé de l'élément « Panneau » du menu natif (no-op hors
 /// macOS).
-pub fn mettre_a_jour_panneau(gauche: bool) {
+pub fn mettre_a_jour_panneau(_gauche: bool) {
     #[cfg(target_os = "macos")]
-    mac::mettre_a_jour_panneau(gauche);
+    mac::mettre_a_jour_panneau(_gauche);
 }
 
 /// Synchronise la coche du thème actif dans le menu natif (no-op hors macOS).
-pub fn mettre_a_jour_theme(theme: Theme) {
+pub fn mettre_a_jour_theme(_theme: Theme) {
     #[cfg(target_os = "macos")]
-    mac::mettre_a_jour_theme(theme);
+    mac::mettre_a_jour_theme(_theme);
 }
 
 #[cfg(target_os = "macos")]

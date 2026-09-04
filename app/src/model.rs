@@ -42,20 +42,25 @@ impl FormeOnde {
         ]
     }
 
-    /// Génère un échantillon normalisé entre -1 et 1 pour une fréquence donnée.
-    pub fn echantillon(&self, t: f32, frequence: f32) -> f32 {
-        let phase = (t * frequence).fract();
+    /// Poids harmoniques du timbre, d'après sa série de Fourier : le
+    /// fondamental en premier, puis les partiels. C'est la signature sonore de
+    /// chaque forme d'onde, utilisée par le synthétiseur pour donner une
+    /// couleur propre et réaliste à la note.
+    pub fn harmoniques(&self) -> Vec<f32> {
+        const NOMBRE_PARTIELS: usize = 20;
         match self {
-            FormeOnde::Sinus => (2.0 * std::f32::consts::PI * phase).sin(),
-            FormeOnde::Carre => {
-                if phase < 0.5 {
-                    0.7
-                } else {
-                    -0.7
-                }
-            }
-            FormeOnde::DentDeScie => 2.0 * phase - 1.0,
-            FormeOnde::Triangle => 4.0 * (phase - 0.5).abs() - 1.0,
+            FormeOnde::Sinus => vec![1.0],
+            FormeOnde::Triangle => (1..=NOMBRE_PARTIELS)
+                .filter(|k| k % 2 == 1)
+                .map(|k| 1.0 / (k * k) as f32)
+                .collect(),
+            FormeOnde::Carre => (1..=NOMBRE_PARTIELS)
+                .filter(|k| k % 2 == 1)
+                .map(|k| 1.0 / k as f32)
+                .collect(),
+            FormeOnde::DentDeScie => (1..=NOMBRE_PARTIELS)
+                .map(|k| 1.0 / k as f32)
+                .collect(),
         }
     }
 }
@@ -132,7 +137,7 @@ pub fn nom_note(frequence: f32) -> String {
     if frequence <= 0.0 {
         return "?".to_string();
     }
-    let do4 = FREQUENCE_DO3 * 4.0; // 261.63 Hz
+    let do4 = FREQUENCE_DO3 * 2.0; // 261.63 Hz
     let demi_tons = (12.0 * (frequence / do4).log2()).round() as i32;
     let octave = 4 + demi_tons.div_euclid(12);
     let index = demi_tons.rem_euclid(12) as usize;
