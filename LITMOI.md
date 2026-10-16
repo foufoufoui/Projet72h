@@ -5,7 +5,7 @@ Cette harpe doit être sans cordes, on utiliseras un capteur LIDAR (VL53L9CX) po
 ## Creer Une boule à facette
 Cette boule à facette ajoute l'aspect lumière elle seras Wireless. (chaque note à une couleur associée configurable)
 ## Ajouter de l'"ia"
-Nous allons ajouter un écran qui afficheras une Phrase poétique adapter au projet, phrase générée par "IA".
+Nous allons ajouter un écran qui afficheras une Phrase poétique adaptée au projet, phrase générée par "IA".
 ## Différents Systèmes à développer
 + Application Multiplatforme pour configurer les différentes notes ainsi que la couleur associé à la note
 + Programme de la Harpe
